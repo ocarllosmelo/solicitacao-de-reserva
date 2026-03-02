@@ -16,7 +16,7 @@ A solução propõe a substituição dos controles manuais tradicionais por um s
 ## 🚀 Tecnologias Utilizadas
 
 - **Backend:** Java
-- **Frontend:** HTML, CSS e JavaScript
+- **Frontend:** HTML, CSS e JavaScript (próxima atualização)
 
 ## 🗺️ Próximos Passos (Roadmap)
 
