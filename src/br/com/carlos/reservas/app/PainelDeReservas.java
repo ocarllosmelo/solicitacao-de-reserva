@@ -1,6 +1,5 @@
 package br.com.carlos.reservas.app;
 
-import java.util.ArrayList;
 import java.util.Scanner;
 
 import br.com.carlos.reservas.model.Cliente;
@@ -8,14 +7,14 @@ import br.com.carlos.reservas.model.Colaborador;
 import br.com.carlos.reservas.model.Produto;
 import br.com.carlos.reservas.model.Reservas;
 import br.com.carlos.reservas.model.StatusReserva;
+import br.com.carlos.reservas.service.ReservaService;
 
 public class PainelDeReservas {
 
 	static Scanner sc = new Scanner(System.in);
-	static ArrayList<Reservas> reserva;
+	static ReservaService service = new ReservaService();
 
 	public static void main(String[] args) {
-		reserva = new ArrayList<Reservas>();
 
 		while (true) {
 			operacoes();
@@ -86,18 +85,7 @@ public class PainelDeReservas {
 		String cpfCliente = sc.nextLine();
 
 		Cliente cliente = new Cliente(nomeCliente, telefoneCliente, emailCliente, cpfCliente);
-
-		// Dados do Produto
-		System.out.println("\nNome do produto:");
-		String nomeProduto = sc.nextLine().toUpperCase();
-		System.out.println("\nCódigo ISBN do produto:");
-		String isbn = sc.nextLine();
-		System.out.println("\nQuantidade do produto:");
-		int quantidadeProduto = sc.nextInt();
-		sc.nextLine();
-
-		Produto produto = new Produto(nomeProduto, isbn, quantidadeProduto);
-
+		
 		// Dados do Colaborador
 		System.out.println("\nNome do colaborador:");
 		String nomeColaborador = sc.nextLine().toUpperCase();
@@ -105,15 +93,34 @@ public class PainelDeReservas {
 		String matricula = sc.nextLine();
 
 		Colaborador colaborador = new Colaborador(nomeColaborador, matricula);
+		
+		// Adicionando a Reserva
+		Reservas novaReserva = new Reservas(cliente, colaborador);
+		
+		String continuar;
+		do {
+			// Dados do Produto
+			System.out.println("\nNome do produto:");
+			String nomeProduto = sc.nextLine().toUpperCase();
+			System.out.println("\nCódigo ISBN do produto:");
+			String isbn = sc.nextLine();
+			System.out.println("\nQuantidade do produto:");
+			int quantidadeProduto = sc.nextInt();
+			sc.nextLine();
+
+			Produto produto = new Produto(nomeProduto, isbn, quantidadeProduto);
+			novaReserva.adicionarProduto(produto);
+			
+			System.out.println("\nDeseja adicionar mais algum produto? (S/N): ");
+			continuar = sc.nextLine().toUpperCase();
+			
+		}while(continuar.equals("S"));
 
 		System.out.println("\nPrevisão, em dias, para entrega: ");
 		int dataPrevista = sc.nextInt();
 		sc.nextLine();
-
-		// Adicionando a Reserva
-		Reservas novaReserva = new Reservas(cliente, colaborador, produto);
-		novaReserva.dataPrevistaParaEntregar(dataPrevista);
-		reserva.add(novaReserva);
+		
+		service.finalizarReserva(novaReserva, dataPrevista);
 		System.out.println("\nReserva criada com sucesso!");
 
 	}
@@ -127,7 +134,9 @@ public class PainelDeReservas {
 		System.out.println("|       2 - Quantidade do produto          |");
 		System.out.println("|       3 - Status da reserva              |");
 		System.out.println("|       4 - Data prevista                  |");
-		System.out.println("|       5 - Voltar                         |");
+		System.out.println("|       5 - Excluir item específico        |");
+		System.out.println("|       6 - Adicionar produto á reserva    |");
+		System.out.println("|       7 - Voltar                         |");
 		System.out.println("--------------------------------------------\n");
 
 		int escolha;
@@ -142,17 +151,11 @@ public class PainelDeReservas {
 			return;
 		}
 
-		if (escolha == 5) {
+		if (escolha == 7)
 			return;
-		}
-
-		if (escolha < 1 || escolha > 4) {
-			System.out.println("\nOpção inválida! Digite novamente.");
-			return;
-		}
 
 		System.out.println("\nDigite o CPF do cliente que deseja atualizar: ");
-		Reservas reservaEncontrada = encontrarReservaPorCpf(sc.nextLine());
+		Reservas reservaEncontrada = service.encontrarReserva(sc.nextLine());
 
 		if (reservaEncontrada == null) {
 			System.out.println("\nCliente não encontrado na lista de reservas.");
@@ -167,86 +170,94 @@ public class PainelDeReservas {
 			break;
 
 		case 2:
-			System.out.println("\nDigite a nova quantidade: ");
-			reservaEncontrada.atualizarQuantidadeProduto(sc.nextInt());
+			System.out.println("\nProdutos na reserva:");
+			for(int i = 0; i < reservaEncontrada.getListaProdutos().size(); i++) {
+				System.out.println(i + " - " + reservaEncontrada.getListaProdutos().get(i).getNomeProduto());
+			}
+			System.out.println("\nSelecione o número de produtos:");
+			int indice = sc.nextInt();
+			System.out.println("\nNova quantidade:");
+			int novaQuantidade = sc.nextInt();
 			sc.nextLine();
+			reservaEncontrada.getListaProdutos().get(indice).setQuantidadeProduto(novaQuantidade);
 			System.out.println("\nQuantidade atualizada com sucesso!");
 			break;
 
 		case 3:
-			// Reservas reservaEncontradaStatus = encontrarReservaPorNome(sc.nextLine());
 
-			if (reservaEncontrada != null) {
-				System.out.println("\nReserva encontrada! Status atual: " + reservaEncontrada.getStatus());
-				System.out.println("\nSelecione o novo status para atualizar a reserva: ");
-				System.out.println("1 - CONFIRMADA");
-				System.out.println("2 - CANCELADA");
-				System.out.println("3 - CONCLUIDA\n");
-
-				int opcaoStatus;
-
-				try {
-					opcaoStatus = sc.nextInt();
-					sc.nextLine();
-
-				} catch (Exception e) {
-					System.out.println("\nOpção inválida! Digite apenas números!");
-					sc.nextLine();
-					return;
-
-				}
-
-				switch (opcaoStatus) {
-
-				case 1:
-					reservaEncontrada.atualizarStatus(StatusReserva.CONFIRMADA);
-					break;
-
-				case 2:
-					reservaEncontrada.atualizarStatus(StatusReserva.CANCELADA);
-					break;
-
-				case 3:
-					reservaEncontrada.atualizarStatus(StatusReserva.CONCLUIDA);
-					break;
-
-				default:
-					System.out.println("\nOpção inválida! Status não alterado!");
-					return;
-				}
-				System.out.println("\nStatus atualizado com sucesso!");
-			}
+			System.out.println("\nReserva encontrada! Status atual: " + reservaEncontrada.getStatus());
+			System.out.println("\nSelecione o novo status para atualizar a reserva: ");
+			System.out.println("1 - CONFIRMADA");
+			System.out.println("2 - CANCELADA");
+			System.out.println("3 - CONCLUIDA\n");
+			int opcaoStatus = sc.nextInt();
+			sc.nextLine();
+			
+			if (opcaoStatus == 1) reservaEncontrada.atualizarStatus(StatusReserva.CONFIRMADA);
+			else if (opcaoStatus == 2) reservaEncontrada.atualizarStatus(StatusReserva.CANCELADA);
+			else if (opcaoStatus == 3) reservaEncontrada.atualizarStatus(StatusReserva.CONCLUIDA);
+			else System.out.println("Opção inválida! Digite apenas números!");
+			
+			System.out.println("\nStatus atualizado com sucesso!");
 			break;
 
 		case 4:
+			
 			System.out.println("\nDigite a nova previsão, em dias, para a entrega: ");
 			reservaEncontrada.dataPrevistaParaEntregar(sc.nextInt());
 			sc.nextLine();
 			System.out.println("\nPrevisão de entrega atualizada com sucesso!");
 			break;
+			
+		case 5:
+			
+			// Excluir item específico da reserva
+		    System.out.println("\n--- Produtos atuais na reserva ---");
+		    // Listamos os produtos com um número na frente
+		    for (int i = 0; i < reservaEncontrada.getListaProdutos().size(); i++) {
+		        System.out.println((i + 1) + " - " + reservaEncontrada.getListaProdutos().get(i).getNomeProduto());
+		    }
+		    
+		    System.out.println("Digite o número do produto que deseja remover:");
+		    int indiceParaRemover = sc.nextInt();
+		    sc.nextLine();
+		    
+		    // Chamamos a remoção
+		    int indiceReal = indiceParaRemover - 1;
+		    reservaEncontrada.removerProdutoPorIndice(indiceReal);
+		    System.out.println("\nItem removido com sucesso!");
+		    break;
+		    
+		case 6:
+	
+		    System.out.println("\n--- Adicionando um novo produto à reserva de " + reservaEncontrada.getCliente().getNomeCliente() + " ---");
+		    
+		    System.out.println("\nNome do novo produto:");
+		    String nomeP = sc.nextLine().toUpperCase();
+		    System.out.println("\nCódigo ISBN:");
+		    String isbn = sc.nextLine();
+		    System.out.println("\nQuantidade:");
+		    int qtd = sc.nextInt();
+		    sc.nextLine();
 
-		default:
-			System.out.println("\nOpção inválida! Digite novamente.");
+		    // Cria o objeto produto e usa o método que já e no modelo
+		    Produto novoProduto = new Produto(nomeP, isbn, qtd);
+		    reservaEncontrada.adicionarProduto(novoProduto);
+		    
+		    System.out.println("\nProduto adicionado com sucesso à reserva existente!");
+		    break;
+			
 		}
-	}
-
-	// Método que busca uma reserva por CPF;
-	public static Reservas encontrarReservaPorCpf(String cpfDoCliente) {
-		for (Reservas r : reserva) {
-
-			if (r.getCliente().getCpfCliente().equalsIgnoreCase(cpfDoCliente))
-				return r;
-		}
-		return null;
 	}
 
 	// Método que lista todas as reservas.
 	public static void listarReserva() {
-		if (reserva.isEmpty()) {
+		var todasAsReservas = service.listarReservas();
+		if (todasAsReservas.isEmpty()) {
 			System.out.println("\nNenhuma reserva cadastrada no momento!");
 		} else {
 			System.out.println("\n======= Lista de Reservas =======");
-			for (Reservas r : reserva) {
+			for (Reservas r : todasAsReservas) {
 				System.out.println(r);
 				System.out.println("-------------------------------");
 			}
@@ -255,10 +266,9 @@ public class PainelDeReservas {
 
 	public static void removerReserva() {
 		System.out.println("\nDigite o CPF do cliente: ");
-		Reservas encontrada = encontrarReservaPorCpf(sc.nextLine());
+		String cpf = sc.nextLine();
 
-		if (encontrada != null) {
-			reserva.remove(encontrada);
+		if (service.excluirReserva(cpf)) {
 			System.out.println("\nReserva removida com sucesso!");
 		} else {
 			System.out.println("\nCliente não encontrado(a) na lista de reservas!");

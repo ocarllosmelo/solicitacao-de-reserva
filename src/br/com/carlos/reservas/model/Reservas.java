@@ -2,6 +2,7 @@ package br.com.carlos.reservas.model;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 //import java.time.format.DateTimeFormatter;
 
 public class Reservas {
@@ -13,18 +14,19 @@ public class Reservas {
 	
 	private Cliente cliente;
 	private Colaborador colaborador;
-	private Produto produto;
+	private ArrayList<Produto> listaProdutos;
 	private StatusReserva status;
 	
-	public Reservas(Cliente cliente, Colaborador colaborador, Produto produto) {
-		this.cliente = cliente;
-		this.colaborador = colaborador;
-		this.produto = produto;
-		this.status = StatusReserva.PENDENTE;
-		this.dataDaReserva = LocalDate.now();
-		this.numeroDeReservas = contadorDeReservas;
-		contadorDeReservas += 1;
-		
+	
+	
+	public Reservas(Cliente cliente, Colaborador colaborador) {
+	    this.cliente = cliente;
+	    this.colaborador = colaborador;
+	    this.listaProdutos = new ArrayList<>(); // Inicializa a lista vazia
+	    this.status = StatusReserva.PENDENTE;
+	    this.dataDaReserva = LocalDate.now();
+	    this.numeroDeReservas = contadorDeReservas;
+	    contadorDeReservas += 1;
 	}
 
 	public int getNumeroDeReservas() {
@@ -75,17 +77,14 @@ public class Reservas {
 	public void setColaborador(Colaborador colaborador) {
 		this.colaborador = colaborador;
 	}
-
-
-	public Produto getProduto() {
-		return produto;
+	
+	public ArrayList<Produto> getListaProdutos() {
+		return listaProdutos;
 	}
 
-
-	public void setProduto(Produto produto) {
-		this.produto = produto;
+	public void setListaProdutos(ArrayList<Produto> listaProdutos) {
+		this.listaProdutos = listaProdutos;
 	}
-
 
 	public StatusReserva getStatus() {
 		return status;
@@ -96,17 +95,24 @@ public class Reservas {
 		this.status = status;
 	}
 	
+	@Override
 	public String toString() {
-		// Formatar data para padrão Br
-		DateTimeFormatter formatarData = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-		
-		return "\nReserva: " + numeroDeReservas + "\nNome do(a) cliente: " + this.cliente.getNomeCliente()
-				+ "\nProduto solicitado: " + this.produto.getNomeProduto() + "\nQuantidade solicitada: " + this.produto.getQuantidadeProduto()
-				+ "\nCódigo ISBN do produto: " + this.produto.getIsbn() + "\nData da reserva: " + this.dataDaReserva.format(formatarData) 
-				+ "\nData prevista para a entrega: " + this.dataPrevistaDaEntrega.format(formatarData) 
-				+ "\nColaborador: " + this.colaborador.getNomeColaborador() + "\nMatricula: " + this.colaborador.getMatriculaColaborador()
-				+ "\nStatus: " + this.status + ".\n";
-
+	    DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+	    String nomesProdutos = "";
+	    
+	    for(Produto p : listaProdutos) {
+	        nomesProdutos += "\n   - " + p.getNomeProduto() + " (Quantidade: " + p.getQuantidadeProduto() + " unidade(s).)";
+	    }
+	    
+	    return "\n===============================" +
+	           "\nRESERVA Nº: " + numeroDeReservas + 
+	           "\nCliente: " + this.cliente.getNomeCliente() + " (CPF: " + this.cliente.getCpfCliente() + ")" +
+	           "\nColaborador: " + this.colaborador.getNomeColaborador() +
+	           "\nData da Reserva: " + this.dataDaReserva.format(fmt) +
+	           "\nPrevisão de Entrega: " + (dataPrevistaDaEntrega != null ? dataPrevistaDaEntrega.format(fmt) : "A definir") +
+	           "\nStatus: " + this.status +
+	           "\nProdutos Solicitados:" + nomesProdutos +
+	           "\n===============================";
 	}
 	
 	public void atualizarNomeReserva(String novoNome) {
@@ -114,9 +120,9 @@ public class Reservas {
 		
 	}
 	
-	public void atualizarQuantidadeProduto(int novaQuantidade) {
+	/*public void atualizarQuantidadeProduto(int novaQuantidade) {
 		this.produto.setQuantidadeProduto(novaQuantidade);
-	}
+	}*/
 	
 	public void atualizarStatus(StatusReserva novoStatus) {
 		this.status = novoStatus;
@@ -125,6 +131,23 @@ public class Reservas {
 	public void dataPrevistaParaEntregar(int dataPrevista) {
 		this.dataPrevistaDaEntrega = this.dataDaReserva.plusDays(dataPrevista);
 		
+	}
+	
+	public void adicionarProduto(Produto produto) {
+	    this.listaProdutos.add(produto);
+	}
+	
+	public void removerProduto(Produto produto) {
+	    this.listaProdutos.remove(produto);
+	}
+	
+	public void removerProdutoPorIndice(int indice) {
+		if (indice >= 0 && indice < this.listaProdutos.size()) {
+			this.listaProdutos.remove(indice);
+		} else {
+			System.out.println("\nErro: Item inválido!");
+		}
+
 	}
 
 }
